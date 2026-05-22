@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Cafetería</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="apple-touch-icon" href="imagenes/logo.png">
+  <link rel="icon" type="image/png" href="imagenes/logo.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#231a12">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Cafetería">
+  <style>
+    .turno-panel {
+      position: absolute;
+      bottom: 28px; left: 0; right: 0;
+      display: flex;
+      justify-content: center;
+      padding: 0 20px;
+      z-index: 10;
+    }
+    .turno-card {
+      background: rgba(35,26,18,0.88);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 22px;
+      max-width: 380px; width: 100%;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    }
+    .turno-card-header {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .turno-label {
+      font-size: 11px; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .turno-badge {
+      display: flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 50px;
+      font-size: 12px; font-weight: 600;
+    }
+    .turno-badge.activo  { background:rgba(61,107,58,0.2); border:1px solid rgba(61,107,58,0.45); color:#7DC47A; }
+    .turno-badge.cerrado { background:rgba(200,169,110,0.08); border:1px solid var(--border); color:var(--muted); }
+    .turno-info { font-family:'Cormorant Garamond',serif; font-size:17px; color:var(--cream); margin-bottom:14px; min-height:24px; }
+    .turno-info span { color: var(--gold); }
+    .turno-acciones { display:flex; gap:8px; }
+    .btn-abrir  { flex:1;padding:11px!important;font-size:13px!important;background:rgba(61,107,58,0.2)!important;border-color:rgba(61,107,58,0.4)!important;color:#7DC47A!important;border-radius:10px!important;margin:0!important;font-weight:600!important; }
+    .btn-cerrar { flex:1;padding:11px!important;font-size:13px!important;background:rgba(184,80,64,0.18)!important;border-color:rgba(184,80,64,0.4)!important;color:#E08878!important;border-radius:10px!important;margin:0!important;font-weight:600!important; }
+    .dot-anim { width:7px;height:7px;border-radius:50%;background:#7DC47A;animation:pulse 1.8s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.7);} }
+    @media (max-width:768px) {
+      .turno-panel { position:static; padding:16px 14px; }
+      .contenido-derecho { display:flex;flex-direction:column;justify-content:center;align-items:center; }
+      #contenidoDerecho { background-size:cover!important; background-position:center!important; background-repeat:no-repeat!important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="contenedor-principal">
+  <div class="panel-izquierdo">
+    <div class="logo-superior">
+      <img src="imagenes/logo.png" alt="Logo">
+      <h1>MI<br>CAFETERÍA</h1>
+    </div>
+    <div class="menu-lateral">
+      <a href="caja.html"      class="boton-menu">-🖥️&nbsp; Caja</a>
+      <a href="menu.html"      class="boton-menu">-⚙️&nbsp; Administración</a>
+      <a href="mozos.html"     class="boton-menu">-☕️&nbsp; Mesas</a>
+      <a href="historial.html" class="boton-menu">-🗓️&nbsp; Historial</a>
+      <a href="configuracion.html" class="boton-menu">-🖋️&nbsp; Personalizar</a>
+    </div>
+  </div>
+
+  <div class="contenido-derecho" id="contenidoDerecho">
+    <div class="login-superior">
+      <a href="login.html">LOGIN</a>
+      <span class="icono-login">👤</span>
+    </div>
+    <div class="logo-central" id="logoCentral">
+      <img src="imagenes/logo.png" alt="Logo central">
+    </div>
+    <div class="turno-panel">
+      <div class="turno-card">
+        <div class="turno-card-header">
+          <span class="turno-label">Estado del turno</span>
+          <span class="turno-badge cerrado" id="turnoBadge">⏸ Sin turno</span>
+        </div>
+        <div class="turno-info" id="turnoInfo">No hay turno activo</div>
+        <div class="turno-acciones">
+          <button class="btn-abrir"  id="btnAbrir"  onclick="abrirTurno()">▶ Abrir turno</button>
+          <button class="btn-cerrar" id="btnCerrar" onclick="cerrarTurno()" style="display:none;">■ Cerrar turno</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="toast.js"></script>
+<script src="modal.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, set, get, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBEoaT_ldwRxBlRe6dpAc2WKBWcbjlmHp0",
+  authDomain: "app-cafeteria-c4518.firebaseapp.com",
+  databaseURL: "https://app-cafeteria-c4518-default-rtdb.firebaseio.com",
+  projectId: "app-cafeteria-c4518",
+  storageBucket: "app-cafeteria-c4518.firebasestorage.app",
+  messagingSenderId: "1046878638257",
+  appId: "1:1046878638257:web:2a93aa93b8e43570c75290"
+};
+
+let app;
+try { app = initializeApp(firebaseConfig); }
+catch(e) { app = initializeApp(firebaseConfig, "index_" + Date.now()); }
+const db = getDatabase(app);
+const badge     = document.getElementById("turnoBadge");
+const info      = document.getElementById("turnoInfo");
+const btnAbrir  = document.getElementById("btnAbrir");
+const btnCerrar = document.getElementById("btnCerrar");
+
+async function cargarEstado() {
+  const snap = await get(ref(db, "turnoActivo"));
+  snap.exists() ? mostrarActivo(snap.val()) : mostrarCerrado();
+}
+
+function mostrarActivo(t) {
+  badge.className = "turno-badge activo";
+  badge.innerHTML = '<span class="dot-anim"></span> Activo';
+  info.innerHTML  = 'Turno <span>' + t.nombre + '</span> · desde las <span>' + t.horaInicio + '</span>';
+  btnAbrir.style.display  = "none";
+  btnCerrar.style.display = "flex";
+}
+function mostrarCerrado() {
+  badge.className  = "turno-badge cerrado";
+  badge.innerHTML  = "⏸ Sin turno";
+  info.textContent = "No hay turno activo";
+  btnAbrir.style.display  = "flex";
+  btnCerrar.style.display = "none";
+}
+
+window.abrirTurno = async function() {
+  const hora    = new Date().getHours();
+  const nombre  = hora >= 5 && hora < 17 ? "Mañana" : "Tarde";
+  const ahora   = new Date();
+  const fecha   = ahora.toISOString().split("T")[0];
+  const horaStr = ahora.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  const turnoId = fecha + "_" + nombre.toLowerCase().replace("ñ","n");
+  const turno   = { id:turnoId, nombre, fecha, horaInicio:horaStr, timestamp:Date.now() };
+  await set(ref(db,"turnoActivo"), turno);
+  mostrarActivo(turno);
+  toast("Turno " + nombre + " abierto a las " + horaStr, "success");
+};
+
+window.cerrarTurno = async function() {
+  const snap = await get(ref(db,"turnoActivo"));
+  if (!snap.exists()) return;
+  const t = snap.val();
+  const ahora   = new Date();
+  const horaStr = ahora.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  const ok = await modalConfirm(
+    "Turno <b>" + t.nombre + "</b> abierto a las <b>" + t.horaInicio + "</b><br>Son las <b>" + horaStr + "</b>",
+    "☕", "¿Cerrar turno?", true
+  );
+  if (!ok) return;
+  await remove(ref(db,"turnoActivo"));
+  mostrarCerrado();
+  toast("Turno " + t.nombre + " cerrado ✓", "info");
+};
+
+cargarEstado();
+</script>
+<script src="config-loader.js"></script>
+</body>
+</html>

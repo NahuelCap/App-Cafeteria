@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Historial</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/png" href="imagenes/logo.png">
+<style>
+  .tabs { display:flex;gap:8px;justify-content:center;margin:14px auto 0;flex-wrap:wrap; }
+  .tab-btn { padding:9px 22px;border-radius:50px;border:1px solid var(--border);background:rgba(15,11,8,0.6);color:var(--muted);font-size:14px;cursor:pointer;transition:all 0.2s;margin:0; }
+  .tab-btn.activo { background:var(--gold-dim);border-color:var(--gold);color:var(--cream); }
+  .filtros { display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:14px auto 0; }
+  .filtros label { font-size:13px;color:var(--muted); }
+  .turno-item {
+    background:rgba(35,26,18,0.7); border:1px solid var(--border);
+    border-radius:12px; padding:14px 18px; margin:8px auto; max-width:480px;
+    cursor:pointer; transition:all 0.2s;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    backdrop-filter:blur(6px);
+  }
+  .turno-item:hover { border-color:var(--gold-mid);transform:translateX(2px); }
+  .turno-nombre { font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--cream); }
+  .turno-fecha  { font-size:12px;color:var(--muted);margin-top:2px; }
+  .turno-total  { font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--gold);white-space:nowrap; }
+  .stat-grid { display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:14px auto;max-width:600px; }
+  .stat-card { background:rgba(35,26,18,0.8);border:1px solid var(--border);border-radius:14px;padding:16px 18px;text-align:center;flex:1;min-width:110px;backdrop-filter:blur(8px); }
+  .stat-num   { font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:var(--gold);line-height:1; }
+  .stat-label { font-size:11px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-top:6px; }
+  .metodos-grid { display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px auto;max-width:520px; }
+  .metodo-card { background:rgba(35,26,18,0.65);border:1px solid var(--border);border-radius:12px;padding:12px 16px;text-align:center;flex:1;min-width:95px; }
+  .metodo-icono { font-size:20px;margin-bottom:4px; }
+  .metodo-monto { font-family:'Cormorant Garamond',serif;font-size:17px;color:var(--cream); }
+  .metodo-label { font-size:11px;color:var(--muted);margin-top:2px; }
+  .mozo-row { display:flex;align-items:center;justify-content:space-between;background:rgba(35,26,18,0.7);border:1px solid var(--border);border-radius:10px;padding:12px 18px;margin:7px auto;max-width:440px; }
+  .mozo-nombre { font-size:15px;color:var(--cream); }
+  .mozo-total  { font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--gold); }
+  .seccion-h { font-family:'Cormorant Garamond',serif;font-size:17px;color:var(--gold);margin:18px auto 8px;max-width:480px;padding-bottom:6px;border-bottom:1px solid var(--border);text-align:left;padding-left:4px; }
+  .volver-btn { display:inline-block;margin:6px;padding:8px 16px;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:13px;cursor:pointer;background:transparent;transition:all 0.2s; }
+  .volver-btn:hover { color:var(--cream);border-color:var(--gold-mid); }
+  .top-producto {
+    background:rgba(200,169,110,0.08);
+    border:1px solid rgba(200,169,110,0.2);
+    border-radius:14px; padding:14px 18px;
+    margin:10px auto; max-width:480px;
+    display:flex;align-items:center;gap:14px;
+    backdrop-filter:blur(6px);
+  }
+  .top-trofeo { font-size:28px; }
+  .top-info { flex:1; }
+  .top-nombre  { font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--cream); }
+  .top-cant    { font-size:13px;color:var(--gold);margin-top:2px; }
+  .btn-exportar {
+    display:inline-flex;align-items:center;gap:8px;
+    padding:10px 20px;border-radius:50px;
+    background:rgba(200,169,110,0.12);
+    border:1px solid var(--gold-mid);
+    color:var(--gold);font-size:14px;font-weight:500;
+    cursor:pointer;margin:10px 6px;
+    transition:all 0.2s;
+  }
+  .btn-exportar:hover { background:rgba(200,169,110,0.22);transform:translateY(-1px); }
+</style>
+</head>
+<body class="con-fondo-secundario">
+
+<h1 class="titulo-cuadro">📊 Historial de Ventas</h1>
+
+<div class="tabs">
+  <button class="tab-btn activo" id="tab-turnos" onclick="cambiarTab('turnos')">Por turno</button>
+  <button class="tab-btn"        id="tab-dia"    onclick="cambiarTab('dia')">Por día</button>
+</div>
+
+<div class="filtros" id="filtro-dia" style="display:none;">
+  <label>Fecha:</label>
+  <input type="date" id="fecha">
+</div>
+
+<div id="contenido"></div>
+
+<br>
+<a href="index.html"><button class="volver-btn">⬅ Volver</button></a>
+
+<script src="toast.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBEoaT_ldwRxBlRe6dpAc2WKBWcbjlmHp0",
+  authDomain: "app-cafeteria-c4518.firebaseapp.com",
+  databaseURL: "https://app-cafeteria-c4518-default-rtdb.firebaseio.com",
+  projectId: "app-cafeteria-c4518",
+  storageBucket: "app-cafeteria-c4518.firebasestorage.app",
+  messagingSenderId: "1046878638257",
+  appId: "1:1046878638257:web:2a93aa93b8e43570c75290"
+};
+let app;
+    try { app = initializeApp(firebaseConfig); }
+    catch(e) { app = initializeApp(firebaseConfig, "historial_html_" + Date.now()); }
+const db  = getDatabase(app);
+
+const contenido  = document.getElementById("contenido");
+const filtroDia  = document.getElementById("filtro-dia");
+const fechaInput = document.getElementById("fecha");
+const hoy        = new Date().toISOString().split("T")[0];
+fechaInput.value = hoy;
+
+let tabActual   = "turnos";
+let todasVentas = {};
+
+onValue(ref(db,"ventas"), (snapshot) => {
+  todasVentas = snapshot.exists() ? snapshot.val() : {};
+  renderTab();
+});
+
+window.cambiarTab = function(tab) {
+  tabActual = tab;
+  document.getElementById("tab-turnos").classList.toggle("activo", tab==="turnos");
+  document.getElementById("tab-dia").classList.toggle("activo",    tab==="dia");
+  filtroDia.style.display = tab==="dia" ? "flex" : "none";
+  renderTab();
+};
+
+fechaInput.addEventListener("change", renderTab);
+
+function renderTab() {
+  if(tabActual==="turnos") renderTurnos();
+  else renderDia(fechaInput.value);
+}
+
+function renderTurnos() {
+  contenido.innerHTML = "";
+  if(Object.keys(todasVentas).length===0){
+    contenido.innerHTML="<p style='color:var(--muted);font-size:14px;margin-top:20px;'>Sin ventas registradas</p>"; return;
+  }
+  const turnos = {};
+  Object.entries(todasVentas).forEach(([turnoId,ventasDelTurno])=>{
+    Object.values(ventasDelTurno).forEach(v=>{
+      if(!turnos[turnoId]) turnos[turnoId]={ id:turnoId,nombre:v.turnoNombre||"Turno",fecha:v.turnoFecha||v.fecha||"—",ventas:[] };
+      turnos[turnoId].ventas.push(v);
+    });
+  });
+  const ordenados = Object.values(turnos).sort((a,b)=>b.id.localeCompare(a.id));
+  if(ordenados.length===0){ contenido.innerHTML="<p style='color:var(--muted);font-size:14px;margin-top:20px;'>Sin turnos registrados</p>"; return; }
+  ordenados.forEach(turno=>{
+    const total = turno.ventas.reduce((s,v)=>s+(Number(v.total)||0),0);
+    const div = document.createElement("div");
+    div.className = "turno-item";
+    div.innerHTML =
+      '<div><div class="turno-nombre">Turno '+turno.nombre+'</div><div class="turno-fecha">'+formatFecha(turno.fecha)+'</div></div>' +
+      '<div class="turno-total">$'+total.toLocaleString('es-AR')+'</div>';
+    div.onclick = ()=>verDetalleTurno(turno);
+    contenido.appendChild(div);
+  });
+}
+
+function renderDia(fecha) {
+  contenido.innerHTML = "";
+  const ventasDia = [];
+  Object.values(todasVentas).forEach(del=>{
+    Object.values(del).forEach(v=>{ if(v.fecha===fecha||v.turnoFecha===fecha) ventasDia.push(v); });
+  });
+  if(ventasDia.length===0){ contenido.innerHTML="<p style='color:var(--muted);font-size:14px;margin-top:20px;'>Sin ventas el "+formatFecha(fecha)+"</p>"; return; }
+  renderDetalle(ventasDia,"Día "+formatFecha(fecha));
+}
+
+function verDetalleTurno(turno){ renderDetalle(turno.ventas,"Turno "+turno.nombre+" · "+formatFecha(turno.fecha)); }
+
+function renderDetalle(ventas, titulo) {
+  contenido.innerHTML="";
+  let totalGeneral=0, porEmpleado={}, porMetodo={Efectivo:0,Débito:0,Crédito:0,Transferencia:0}, contadorProductos={};
+
+  ventas.forEach(v=>{
+    const t=Number(v.total)||0;
+    totalGeneral+=t;
+    const empleado=v.mozo||"Sin nombre";
+    if(!porEmpleado[empleado]) porEmpleado[empleado]=0;
+    porEmpleado[empleado]+=t;
+    const m=v.metodoPago||"Efectivo";
+    if(porMetodo[m]!==undefined) porMetodo[m]+=t; else porMetodo[m]=t;
+    if(Array.isArray(v.productos)){
+      v.productos.forEach(p=>{
+        if(!contadorProductos[p.nombre]) contadorProductos[p.nombre]=0;
+        contadorProductos[p.nombre]+=(p.cantidad||1);
+      });
+    }
+  });
+
+  let topProducto=null, topCant=0;
+  Object.entries(contadorProductos).forEach(([nom,cant])=>{ if(cant>topCant){topCant=cant;topProducto=nom;} });
+
+  const h=document.createElement("div");
+  h.innerHTML='<button class="volver-btn" onclick="renderTab()">← Volver</button><div class="titulo-cuadro" style="font-size:16px;">'+titulo+'</div>';
+  contenido.appendChild(h);
+
+  const expWrap=document.createElement("div");
+  expWrap.innerHTML=
+    '<button class="btn-exportar" onclick="exportarCSV()">📥 Exportar CSV</button>' +
+    '<button class="btn-exportar" onclick="exportarPDF()">🖨️ Imprimir</button>';
+  contenido.appendChild(expWrap);
+
+  const sg=document.createElement("div");
+  sg.className="stat-grid";
+  sg.innerHTML=
+    '<div class="stat-card"><div class="stat-num">$'+totalGeneral.toLocaleString('es-AR')+'</div><div class="stat-label">Total vendido</div></div>'+
+    '<div class="stat-card"><div class="stat-num">'+ventas.length+'</div><div class="stat-label">Mesas cobradas</div></div>';
+  contenido.appendChild(sg);
+
+  if(topProducto){
+    const tp=document.createElement("div");
+    tp.className="top-producto";
+    tp.innerHTML='<div class="top-trofeo">🏆</div><div class="top-info"><div class="top-nombre">'+topProducto+'</div><div class="top-cant">Producto más pedido · '+topCant+' unidades</div></div>';
+    contenido.appendChild(tp);
+  }
+
+  const mh=document.createElement("div");
+  mh.className="seccion-h"; mh.textContent="Por método de pago";
+  contenido.appendChild(mh);
+  const mg=document.createElement("div"); mg.className="metodos-grid";
+  const iconos={Efectivo:"💵",Débito:"💳",Crédito:"🏦",Transferencia:"📲"};
+  Object.entries(porMetodo).forEach(([met,monto])=>{
+    if(monto===0) return;
+    mg.innerHTML+='<div class="metodo-card"><div class="metodo-icono">'+(iconos[met]||"💰")+'</div><div class="metodo-monto">$'+monto.toLocaleString('es-AR')+'</div><div class="metodo-label">'+met+'</div></div>';
+  });
+  if(!mg.innerHTML) mg.innerHTML="<p style='color:var(--muted);font-size:13px;'>Sin datos</p>";
+  contenido.appendChild(mg);
+
+  const mzh=document.createElement("div");
+  mzh.className="seccion-h"; mzh.textContent="Por empleado";
+  contenido.appendChild(mzh);
+  Object.entries(porEmpleado).forEach(([empleado,total])=>{
+    const row=document.createElement("div"); row.className="mozo-row";
+    row.innerHTML='<span class="mozo-nombre">👤 '+empleado+'</span><span class="mozo-total">$'+total.toLocaleString('es-AR')+'</span>';
+    contenido.appendChild(row);
+  });
+
+  window._exportData = { titulo, ventas, totalGeneral, porEmpleado, porMetodo, topProducto, topCant };
+}
+
+window.exportarCSV = function(){
+  const d = window._exportData;
+  if(!d){ toast("Sin datos para exportar","error"); return; }
+  let csv = "Mesa,Empleado,Total,Método de Pago,Fecha,Hora\n";
+  d.ventas.forEach(v=>{
+    csv += [v.mesa,v.mozo,v.total,v.metodoPago||"",v.fecha||"",v.hora||""].join(",") + "\n";
+  });
+  csv += "\nResumen\n";
+  csv += "Total general,$"+d.totalGeneral+"\n";
+  csv += "Mesas cobradas,"+d.ventas.length+"\n";
+  if(d.topProducto) csv += "Más vendido,"+d.topProducto+" ("+d.topCant+")\n";
+  csv += "\nPor método\n";
+  Object.entries(d.porMetodo).forEach(([m,t])=>{ if(t>0) csv+=m+",$"+t+"\n"; });
+  csv += "\nPor empleado\n";
+  Object.entries(d.porEmpleado).forEach(([m,t])=>{ csv+=m+",$"+t+"\n"; });
+
+  const blob = new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href=url; a.download="historial_"+d.titulo.replace(/[^a-z0-9]/gi,"_")+".csv";
+  a.click(); URL.revokeObjectURL(url);
+  toast("CSV descargado ✓","success");
+};
+
+window.exportarPDF = function(){
+  const d = window._exportData;
+  if(!d){ toast("Sin datos para exportar","error"); return; }
+  const iconos={Efectivo:"💵",Débito:"💳",Crédito:"🏦",Transferencia:"📲"};
+  let metodoRows="";
+  Object.entries(d.porMetodo).forEach(([m,t])=>{ if(t>0) metodoRows+=`<tr><td>${iconos[m]||""} ${m}</td><td style="text-align:right;font-weight:bold;">$${t.toLocaleString('es-AR')}</td></tr>`; });
+  let empleadoRows="";
+  Object.entries(d.porEmpleado).forEach(([m,t])=>{ empleadoRows+=`<tr><td>👤 ${m}</td><td style="text-align:right;font-weight:bold;">$${t.toLocaleString('es-AR')}</td></tr>`; });
+
+  const html=`<html><head><style>
+    body{font-family:'Courier New',monospace;background:white;color:#111;padding:24px;max-width:480px;margin:auto;}
+    h1{font-size:22px;letter-spacing:2px;text-align:center;border-bottom:2px solid #111;padding-bottom:12px;margin-bottom:16px;}
+    h2{font-size:14px;letter-spacing:1px;text-transform:uppercase;color:#555;margin:18px 0 8px;}
+    table{width:100%;border-collapse:collapse;margin-bottom:8px;}
+    td{padding:6px 4px;border-bottom:1px dashed #ddd;font-size:14px;}
+    .total{font-size:20px;font-weight:bold;text-align:center;padding:14px;border:2px solid #111;border-radius:6px;margin:16px 0;}
+    .top{background:#fffbf0;border:1px solid #ddd;border-radius:6px;padding:12px;text-align:center;margin:12px 0;}
+    .top-num{font-size:13px;color:#888;margin-top:4px;}
+  </style></head><body>
+    <h1>MI CAFETERÍA</h1>
+    <p style="text-align:center;color:#555;font-size:13px;margin-bottom:20px;">${d.titulo}</p>
+    <div class="total">Total: $${d.totalGeneral.toLocaleString('es-AR')}</div>
+    ${d.topProducto?'<div class="top">🏆 <b>'+d.topProducto+'</b><div class="top-num">Más pedido · '+d.topCant+' unidades</div></div>':""}
+    <h2>Por método de pago</h2>
+    <table>${metodoRows}</table>
+    <h2>Por empleado</h2>
+    <table>${empleadoRows}</table>
+    <p style="text-align:center;color:#aaa;font-size:11px;margin-top:24px;">Generado: ${new Date().toLocaleString('es-AR')}</p>
+  `;
+
+  const v=window.open("","","width=520,height=700");
+  v.document.write(html); v.document.close(); v.print();
+  toast("Abriendo para imprimir...","info");
+};
+
+function formatFecha(f) {
+  if(!f) return "—";
+  const [y,m,d]=f.split("-");
+  return d+"/"+m+"/"+y;
+}
+</script>
+
+<script src="config-loader.js"></script>
+</body>
+</html>

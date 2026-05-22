@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Caja</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/png" href="imagenes/logo.png">
+<style>
+  .mozo-card {
+    display: inline-block;
+    background: rgba(35,26,18,0.8);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 20px;
+    margin: 6px;
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    color: var(--cream);
+    transition: all 0.2s;
+    backdrop-filter: blur(6px);
+  }
+  .mozo-card:hover {
+    background: var(--gold-dim);
+    border-color: var(--gold);
+    transform: translateY(-2px);
+  }
+  .mesa-card {
+    background: rgba(35,26,18,0.75);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin: 10px auto;
+    max-width: 560px;
+    text-align: left;
+    backdrop-filter: blur(6px);
+  }
+  .mesa-card h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+  .mesa-card ul { margin: 10px 0; }
+  .mesa-card li {
+    border-color: rgba(200,169,110,0.08);
+    background: rgba(15,11,8,0.3);
+    font-size: 13px;
+  }
+  .total-mesa {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    color: var(--cream);
+    margin-top: 10px;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+  }
+  .btn-accion {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 18px; margin: 4px;
+    border-radius: 10px; font-size: 13px;
+    font-weight: 500; cursor: pointer;
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+  }
+  .btn-imprimir { background: rgba(61,107,58,0.2); border-color: rgba(61,107,58,0.4); color: #7DC47A; }
+  .btn-imprimir:hover { background: rgba(61,107,58,0.35); transform: translateY(-1px); }
+  .btn-cobrar { background: rgba(200,169,110,0.15); border-color: var(--gold-mid); color: var(--gold); }
+  .btn-cobrar:hover { background: rgba(200,169,110,0.28); transform: translateY(-1px); }
+  .turno-aviso {
+    background: rgba(184,80,64,0.15);
+    border: 1px solid rgba(184,80,64,0.35);
+    border-radius: 10px;
+    padding: 12px 18px;
+    color: #E08878;
+    font-size: 14px;
+    max-width: 500px;
+    margin: 10px auto;
+  }
+  .turno-activo-info {
+    background: rgba(61,107,58,0.12);
+    border: 1px solid rgba(61,107,58,0.3);
+    border-radius: 10px;
+    padding: 10px 16px;
+    color: #7DC47A;
+    font-size: 13px;
+    max-width: 500px;
+    margin: 10px auto;
+    font-family: 'Outfit', sans-serif;
+  }
+</style>
+</head>
+
+<body class="con-fondo-secundario">
+
+<a href="index.html" style="display:inline-block;margin:10px 0 0;padding:8px 16px;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:13px;text-decoration:none;">← Inicio</a>
+
+<h1 class="titulo-cuadro">💰 Caja — Pedidos</h1>
+
+<div id="turnoStatus"></div>
+<div class="titulo-cuadro" id="vistaMozos"></div>
+<div id="pedidos"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue, remove, push, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBEoaT_ldwRxBlRe6dpAc2WKBWcbjlmHp0",
+  authDomain: "app-cafeteria-c4518.firebaseapp.com",
+  databaseURL: "https://app-cafeteria-c4518-default-rtdb.firebaseio.com",
+  projectId: "app-cafeteria-c4518",
+  storageBucket: "app-cafeteria-c4518.firebasestorage.app",
+  messagingSenderId: "1046878638257",
+  appId: "1:1046878638257:web:2a93aa93b8e43570c75290"
+};
+
+let app;
+    try { app = initializeApp(firebaseConfig); }
+    catch(e) { app = initializeApp(firebaseConfig, "caja_html_" + Date.now()); }
+const db  = getDatabase(app);
+
+const vistaMozos  = document.getElementById("vistaMozos");
+const pedidosDiv  = document.getElementById("pedidos");
+const turnoStatus = document.getElementById("turnoStatus");
+const pedidosRef  = ref(db, "mesas");
+
+let turnoActual = null;
+
+get(ref(db, "turnoActivo")).then(snap => {
+  if (snap.exists()) {
+    turnoActual = snap.val();
+    turnoStatus.innerHTML =
+      '<div class="turno-activo-info">🟢 Turno activo: <b>' + turnoActual.nombre +
+      '</b> · Abierto a las ' + turnoActual.horaInicio + '</div>';
+  } else {
+    turnoStatus.innerHTML =
+      '<div class="turno-aviso">⚠️ No hay turno abierto. Abrí un turno desde el Inicio antes de cobrar.</div>';
+  }
+});
+
+function mostrarEmpleados(snapshot) {
+  vistaMozos.innerHTML = "<h2 style='margin-bottom:12px;font-size:18px;'>Empleados activos</h2>";
+  pedidosDiv.innerHTML = "";
+  if (!snapshot.exists()) {
+    vistaMozos.innerHTML += "<p style='color:var(--muted);font-size:14px;'>No hay pedidos cargados</p>";
+    return;
+  }
+  snapshot.forEach(function(child) {
+    const btn = document.createElement("button");
+    btn.className = "mozo-card";
+    btn.innerHTML = "👤 " + child.key;
+    btn.onclick = function() { mostrarMesasDeEmpleado(child.key, child.val()); };
+    vistaMozos.appendChild(btn);
+  });
+}
+
+function mostrarMesasDeEmpleado(nombreEmpleado, mesasEmpleado) {
+  vistaMozos.innerHTML =
+    "<button onclick=\"volverAEmpleados()\" style='margin-bottom:10px;'>← Volver</button>" +
+    "<h2 style='font-size:20px;'>Mesas de " + nombreEmpleado + "</h2>";
+  pedidosDiv.innerHTML = "";
+
+  for (const numeroMesa in mesasEmpleado) {
+    const pedido = mesasEmpleado[numeroMesa];
+    if (!pedido || typeof pedido !== "object") continue;
+
+    let itemsHTML = "";
+    if (Array.isArray(pedido.pedido)) {
+      pedido.pedido.forEach(function(p) {
+        itemsHTML += "<li>" + p.nombre +
+          (p.detalle ? " <em style='color:var(--muted);'>(" + p.detalle + ")</em>" : "") +
+          " x" + p.cantidad +
+          " <span style='float:right;color:var(--gold);'>$" + p.subtotal.toLocaleString('es-AR') + "</span></li>";
+      });
+    }
+
+    const div = document.createElement("div");
+    div.className = "mesa-card";
+    div.innerHTML =
+      "<h3>Mesa " + numeroMesa + "</h3>" +
+      "<p style='font-size:13px;color:var(--muted);margin-bottom:8px;'>Empleado: " + nombreEmpleado + "</p>" +
+      "<ul>" + itemsHTML + "</ul>" +
+      "<p class='total-mesa'><b>Total: $" + Number(pedido.total || 0).toLocaleString('es-AR') + "</b></p>" +
+      "<div style='margin-top:12px;'>" +
+      "<button class='btn-accion btn-cobrar' onclick=\"cerrarMesa('" + nombreEmpleado + "','" + numeroMesa + "')\">💳 Cobrar</button>" +
+      "</div>";
+    pedidosDiv.appendChild(div);
+  }
+}
+
+window.volverAEmpleados = function() {
+  onValue(pedidosRef, function(snapshot) { mostrarEmpleados(snapshot); }, { onlyOnce: true });
+};
+
+onValue(pedidosRef, function(snapshot) { mostrarEmpleados(snapshot); });
+
+
+/* ── COBRAR MESA ── */
+window.cerrarMesa = async function(empleado, mesa) {
+  const metodo = prompt("Método de pago:\n\n1 - Efectivo\n2 - Débito\n3 - Crédito\n4 - Transferencia");
+  const metodos = {"1":"Efectivo","2":"Débito","3":"Crédito","4":"Transferencia"};
+  const metodoTexto = metodos[metodo];
+  if (!metodoTexto) { alert("Método inválido"); return; }
+
+  const mesaRef  = ref(db, "mesas/" + empleado + "/" + mesa);
+  const snapshot = await get(mesaRef);
+  if (!snapshot.exists()) { alert("No hay datos"); return; }
+  const pedido = snapshot.val();
+
+  const turnoSnap = await get(ref(db, "turnoActivo"));
+  const turno = turnoSnap.exists() ? turnoSnap.val() : null;
+
+  let rows = "";
+  pedido.pedido.forEach(function(p) {
+    rows += `<tr>
+      <td style="padding:6px 4px;font-size:14px;border-bottom:1px dashed #ddd;">${p.nombre}${p.detalle ? '<br><span style="font-size:11px;color:#888;">⚠ ' + p.detalle + '</span>' : ''}</td>
+      <td style="padding:6px 4px;text-align:center;border-bottom:1px dashed #ddd;">×${p.cantidad}</td>
+      <td style="padding:6px 4px;text-align:right;border-bottom:1px dashed #ddd;">$${p.subtotal.toLocaleString('es-AR')}</td>
+    </tr>`;
+  });
+
+  const iconos = {"Efectivo":"💵","Débito":"💳","Crédito":"🏦","Transferencia":"📲"};
+  const html = `<html><head><style>
+    body{font-family:'Courier New',monospace;background:white;color:#111;margin:0;padding:0;}
+    .ticket{max-width:320px;margin:0 auto;padding:20px 16px;}
+    .header{text-align:center;border-bottom:2px solid #111;padding-bottom:14px;margin-bottom:14px;}
+    .logo{font-size:22px;font-weight:bold;letter-spacing:2px;}
+    .sub{font-size:11px;letter-spacing:3px;color:#555;margin-top:2px;}
+    .info{font-size:13px;color:#444;margin-top:4px;}
+    table{width:100%;border-collapse:collapse;margin:10px 0;}
+    th{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#888;padding:4px;border-bottom:1px solid #111;}
+    .total-row td{font-size:18px;font-weight:bold;padding:12px 4px 4px;border-top:2px solid #111;}
+    .pago-box{text-align:center;margin:14px 0;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:15px;}
+    .footer{text-align:center;margin-top:16px;font-size:12px;color:#888;border-top:1px dashed #ccc;padding-top:12px;letter-spacing:1px;}
+  </style></head><body><div class="ticket">
+    <div class="header">
+      <div class="logo">MI CAFETERÍA</div>
+      <div class="sub">CAFETERÍA & PASTELERÍA</div>
+      <div class="info">Mesa <b>${pedido.mesa}</b> &nbsp;|&nbsp; Empleado: <b>${pedido.mozo}</b></div>
+      <div class="info" style="font-size:12px;">${new Date().toLocaleString('es-AR')}</div>
+      ${turno ? '<div class="info" style="font-size:11px;color:#888;">Turno ' + turno.nombre + '</div>' : ''}
+    </div>
+    <table>
+      <tr><th style="text-align:left;">Producto</th><th>Cant.</th><th style="text-align:right;">Precio</th></tr>
+      ${rows}
+      <tr class="total-row">
+        <td colspan="2">TOTAL</td>
+        <td style="text-align:right;">$${Number(pedido.total).toLocaleString('es-AR')}</td>
+      </tr>
+    </table>
+    <div class="pago-box">${iconos[metodoTexto]} Pago: <b>${metodoTexto}</b></div>
+    <div class="footer">¡Gracias por su visita!<br>Vuelva pronto ☕</div>
+  </div>`;
+
+  const v = window.open("", "", "width=340,height=700");
+  v.document.write(html); v.document.close(); v.print();
+
+  const fecha = new Date().toISOString().split("T")[0];
+  const hora  = new Date().getHours();
+  const turnoId     = turno ? turno.id     : (fecha + "_" + (hora < 17 ? "manana" : "tarde"));
+  const turnoNombre = turno ? turno.nombre : (hora < 17 ? "Mañana" : "Tarde");
+  const turnoFecha  = turno ? turno.fecha  : fecha;
+
+  const venta = {
+    mesa:        pedido.mesa,
+    mozo:        pedido.mozo,
+    total:       Number(pedido.total) || 0,
+    productos:   pedido.pedido || [],
+    metodoPago:  metodoTexto,
+    fecha:       fecha,
+    turnoId:     turnoId,
+    turnoNombre: turnoNombre,
+    turnoFecha:  turnoFecha,
+    hora:        new Date().toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'})
+  };
+
+  await push(ref(db, "ventas/" + turnoId), venta);
+  await remove(mesaRef);
+  alert("Mesa cobrada y cerrada ✓");
+
+  onValue(pedidosRef, function(snapshot) { mostrarEmpleados(snapshot); }, { onlyOnce: true });
+};
+</script>
+
+<script src="config-loader.js"></script>
+</body>
+</html>

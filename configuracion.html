@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuración</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="imagenes/logo.png">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ── LOGIN PANEL ── */
+    .lock-screen {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .lock-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px 30px;
+      max-width: 360px; width: 100%;
+      box-shadow: var(--shadow-lg);
+      text-align: center;
+    }
+    .lock-icon { font-size: 48px; margin-bottom: 16px; }
+    .lock-titulo {
+      font-family: 'Playfair Display', serif;
+      font-size: 26px; color: var(--espresso);
+      margin-bottom: 6px;
+    }
+    .lock-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+    .lock-input {
+      width: 100%; padding: 14px 16px;
+      border-radius: 12px; border: 1px solid var(--border);
+      background: var(--bg); color: var(--text);
+      font-size: 16px; font-family: 'DM Sans', sans-serif;
+      outline: none; text-align: center; letter-spacing: 0.2em;
+      margin-bottom: 16px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .lock-input:focus {
+      border-color: var(--terracota);
+      box-shadow: 0 0 0 3px rgba(196,96,58,0.1);
+    }
+    .lock-btn {
+      width: 100%; padding: 14px;
+      border-radius: 12px; border: none;
+      background: var(--espresso); color: white;
+      font-family: 'Playfair Display', serif;
+      font-size: 17px; font-weight: 700;
+      cursor: pointer; margin: 0;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    .lock-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .lock-error {
+      color: var(--terracota); font-size: 13px;
+      margin-top: 10px; display: none;
+    }
+
+    /* ── CONFIG PANEL ── */
+    .config-panel { display: none; }
+    .config-header {
+      background: var(--espresso);
+      padding: 18px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .config-header-titulo {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px; color: white; font-weight: 700;
+    }
+    .config-volver {
+      color: rgba(255,255,255,0.6); font-size: 13px;
+      text-decoration: none; padding: 8px 14px;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px; transition: all 0.2s;
+    }
+    .config-volver:hover { color: white; border-color: rgba(255,255,255,0.3); }
+
+    .config-body { padding: 20px 16px 100px; max-width: 540px; margin: 0 auto; }
+
+    /* Secciones */
+    .seccion {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .seccion-header {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .seccion-icono { font-size: 20px; }
+    .seccion-titulo {
+      font-family: 'Playfair Display', serif;
+      font-size: 17px; color: var(--espresso); font-weight: 700;
+    }
+    .seccion-body { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+
+    /* Campos */
+    .campo { display: flex; flex-direction: column; gap: 6px; }
+    .campo label {
+      font-size: 12px; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--muted); font-weight: 500;
+    }
+    .campo input[type="text"],
+    .campo input[type="password"],
+    .campo select {
+      width: 100%; padding: 12px 14px;
+      border-radius: 10px; border: 1px solid var(--border);
+      background: var(--bg); color: var(--text);
+      font-size: 15px; font-family: 'DM Sans', sans-serif;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .campo input:focus, .campo select:focus {
+      border-color: var(--terracota);
+      box-shadow: 0 0 0 3px rgba(196,96,58,0.1);
+    }
+
+    /* Color picker */
+    .color-row { display: flex; align-items: center; gap: 10px; }
+    .color-preview {
+      width: 42px; height: 42px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      flex-shrink: 0;
+      position: relative; overflow: hidden;
+    }
+    .color-preview input[type="color"] {
+      position: absolute; inset: -4px;
+      width: calc(100% + 8px); height: calc(100% + 8px);
+      border: none; padding: 0; cursor: pointer;
+      opacity: 0;
+    }
+    .color-hex {
+      flex: 1; padding: 12px 14px;
+      border-radius: 10px; border: 1px solid var(--border);
+      background: var(--bg); color: var(--text);
+      font-size: 15px; font-family: 'DM Sans', sans-serif;
+      outline: none; transition: border-color 0.2s;
+    }
+    .color-hex:focus { border-color: var(--terracota); }
+
+    /* Upload imagen */
+    .upload-area {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--bg);
+    }
+    .upload-area:hover { border-color: var(--terracota); background: rgba(196,96,58,0.04); }
+    .upload-area input { display: none; }
+    .upload-preview {
+      max-width: 120px; max-height: 120px;
+      border-radius: 10px; margin: 0 auto 10px;
+      display: none; object-fit: cover;
+    }
+    .upload-txt { font-size: 13px; color: var(--muted); }
+    .upload-txt b { color: var(--terracota); }
+
+    /* Vista previa colores */
+    .preview-strip {
+      display: flex; gap: 8px; margin-top: 6px;
+    }
+    .preview-chip {
+      flex: 1; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+    }
+
+    /* Barra fija guardar */
+    .guardar-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: white;
+      border-top: 1px solid var(--border);
+      padding: 14px 20px;
+      display: none;
+      gap: 10px;
+      box-shadow: 0 -4px 20px rgba(44,26,14,0.1);
+      z-index: 100;
+    }
+    .guardar-bar.visible { display: flex; }
+    .btn-guardar {
+      flex: 1; padding: 14px;
+      border-radius: 12px; border: none;
+      background: var(--espresso); color: white;
+      font-family: 'Playfair Display', serif;
+      font-size: 17px; font-weight: 700;
+      cursor: pointer; margin: 0;
+      transition: opacity 0.2s;
+    }
+    .btn-guardar:hover { opacity: 0.85; }
+    .btn-preview {
+      padding: 14px 18px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text-soft);
+      font-size: 14px; cursor: pointer; margin: 0;
+    }
+
+    /* Tipografias disponibles */
+    .font-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .font-btn {
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text); font-size: 14px;
+      cursor: pointer; margin: 0;
+      transition: all 0.18s;
+    }
+    .font-btn.seleccionada {
+      border-color: var(--terracota);
+      background: rgba(196,96,58,0.08);
+      color: var(--terracota);
+    }
+
+    /* Toast config */
+    .cfg-toast {
+      position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+      background: var(--espresso); color: white;
+      padding: 12px 24px; border-radius: 50px;
+      font-size: 14px; font-weight: 500;
+      z-index: 9999; opacity: 0;
+      transition: opacity 0.3s;
+      white-space: nowrap;
+      box-shadow: 0 8px 32px rgba(44,26,14,0.25);
+    }
+    .cfg-toast.show { opacity: 1; }
+  </style>
+</head>
+<body class="con-fondo-secundario" style="padding:0;">
+
+<!-- ══ PANTALLA DE BLOQUEO ══ -->
+<div class="lock-screen" id="lockScreen">
+  <div class="lock-card">
+    <div class="lock-icon">🔐</div>
+    <div class="lock-titulo">Configuración</div>
+    <div class="lock-sub">Ingresá la contraseña del dueño</div>
+    <input
+      type="password"
+      class="lock-input"
+      id="passInput"
+      placeholder="••••••••"
+      maxlength="30"
+    >
+    <div class="lock-error" id="lockError">Contraseña incorrecta</div>
+    <button class="lock-btn" onclick="verificarPass()">Entrar →</button>
+    <br>
+    <a href="index.html" style="display:inline-block;margin-top:16px;font-size:13px;color:var(--muted);">← Volver al inicio</a>
+  </div>
+</div>
+
+<!-- ══ PANEL DE CONFIGURACIÓN ══ -->
+<div class="config-panel" id="configPanel">
+
+  <div class="config-header">
+    <span class="config-header-titulo">⚙️ Personalización</span>
+    <a href="index.html" class="config-volver">← Inicio</a>
+  </div>
+
+  <div class="config-body">
+
+    <!-- IDENTIDAD -->
+    <div class="seccion">
+      <div class="seccion-header">
+        <span class="seccion-icono">🏪</span>
+        <span class="seccion-titulo">Identidad del negocio</span>
+      </div>
+      <div class="seccion-body">
+        <div class="campo">
+          <label>Nombre de la cafetería</label>
+          <input type="text" id="cfg-nombre" placeholder="Ej: Café del Centro">
+        </div>
+        <div class="campo">
+          <label>Subtítulo</label>
+          <input type="text" id="cfg-subtitulo" placeholder="Ej: Cafetería & Pastelería">
+        </div>
+      </div>
+    </div>
+
+    <!-- LOGO -->
+    <div class="seccion">
+      <div class="seccion-header">
+        <span class="seccion-icono">🖼️</span>
+        <span class="seccion-titulo">Logo</span>
+      </div>
+      <div class="seccion-body">
+        <div class="upload-area" onclick="document.getElementById('logoInput').click()">
+          <input type="file" id="logoInput" accept="image/*" onchange="previewImagen(this,'logoPreview','logoUrl')">
+          <img class="upload-preview" id="logoPreview" src="" alt="Logo">
+          <div class="upload-txt">Tocá para subir tu logo<br><b>PNG o JPG recomendado</b></div>
+        </div>
+        <div class="campo">
+          <label>O pegá una URL de imagen</label>
+          <input type="text" id="cfg-logoUrl" placeholder="https://..." oninput="syncLogoUrl(this.value)">
+        </div>
+      </div>
+    </div>
+
+    <!-- FONDO -->
+    <div class="seccion">
+      <div class="seccion-header">
+        <span class="seccion-icono">🌄</span>
+        <span class="seccion-titulo">Fondo de pantalla</span>
+      </div>
+      <div class="seccion-body">
+        <div class="upload-area" onclick="document.getElementById('fondoInput').click()">
+          <input type="file" id="fondoInput" accept="image/*" onchange="previewImagen(this,'fondoPreview','fondoUrl')">
+          <img class="upload-preview" id="fondoPreview" src="" alt="Fondo">
+          <div class="upload-txt">Tocá para subir una imagen de fondo<br><b>Opcional — se aplica a toda la app</b></div>
+        </div>
+        <div class="campo">
+          <label>O pegá una URL de imagen</label>
+          <input type="text" id="cfg-fondoUrl" placeholder="https://..." oninput="syncFondoUrl(this.value)">
+        </div>
+        <button onclick="quitarFondo()" style="font-size:13px;padding:8px 14px;color:var(--terracota);border-color:rgba(196,96,58,0.3);margin:0;">
+          ✕ Quitar fondo
+        </button>
+      </div>
+    </div>
+
+    <!-- COLORES -->
+    <div class="seccion">
+      <div class="seccion-header">
+        <span class="seccion-icono">🎨</span>
+        <span class="seccion-titulo">Colores</span>
+      </div>
+      <div class="seccion-body">
+        <div class="campo">
+          <label>Color principal (botones, acentos)</label>
+          <div class="color-row">
+            <div class="color-preview" id="prev-primario">
+              <input type="color" id="color-primario" value="#C4603A" oninput="syncColor('primario',this.value)">
+            </div>
+            <input type="text" class="color-hex" id="hex-primario" value="#C4603A" maxlength="7" oninput="syncHex('primario',this.value)">
+          </div>
+        </div>
+        <div class="campo">
+          <label>Color sidebar / barra lateral</label>
+          <div class="color-row">
+            <div class="color-preview" id="prev-sidebar">
+              <input type="color" id="color-sidebar" value="#2C1A0E" oninput="syncColor('sidebar',this.value)">
+            </div>
+            <input type="text" class="color-hex" id="hex-sidebar" value="#2C1A0E" maxlength="7" oninput="syncHex('sidebar',this.value)">
+          </div>
+        </div>
+        <div class="campo">
+          <label>Color de fondo</label>
+          <div class="color-row">
+            <div class="color-preview" id="prev-fondo">
+              <input type="color" id="color-fondo" value="#F5EFE6" oninput="syncColor('fondo',this.value)">
+            </div>
+            <input type="text" class="color-hex" id="hex-fondo" value="#F5EFE6" maxlength="7" oninput="syncHex('fondo',this.value)">
+          </div>
+        </div>
+        <!-- Vista previa -->
+        <div class="preview-strip" id="previewStrip">
+          <div class="preview-chip" id="chip-primario" style="background:#C4603A;color:white;">Acento</div>
+          <div class="preview-chip" id="chip-sidebar"  style="background:#2C1A0E;color:white;">Sidebar</div>
+          <div class="preview-chip" id="chip-fondo"    style="background:#F5EFE6;color:#2C1A0E;border:1px solid #ddd;">Fondo</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIPOGRAFÍA -->
+    <div class="seccion">
+      <div class="seccion-header">
+        <span class="seccion-icono">🔤</span>
+        <span class="seccion-titulo">Tipografía</span>
+      </div>
+      <div class="seccion-body">
+        <div class="campo">
+          <label>Fuente para títulos</label>
+          <div class="font-grid" id="fontGrid">
+            <button class="font-btn seleccionada" style="font-family:'Playfair Display',serif" onclick="seleccionarFont('Playfair Display',this)">Playfair Display</button>
+            <button class="font-btn" style="font-family:'Cormorant Garamond',serif" onclick="seleccionarFont('Cormorant Garamond',this)">Cormorant Garamond</button>
+            <button class="font-btn" style="font-family:'Lora',serif" onclick="seleccionarFont('Lora',this)">Lora</button>
+            <button class="font-btn" style="font-family:'Merriweather',serif" onclick="seleccionarFont('Merriweather',this)">Merriweather</button>
+            <button class="font-btn" style="font-family:'DM Sans',sans-serif" onclick="seleccionarFont('DM Sans',this)">DM Sans</button>
+            <button class="font-btn" style="font-family:'Josefin Sans',sans-serif" onclick="seleccionarFont('Josefin Sans',this)">Josefin Sans</button>
+            <button class="font-btn" style="font-family:'Raleway',sans-serif" onclick="seleccionarFont('Raleway',this)">Raleway</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTRASEÑA -->
+    <div class="seccion">
+      <div class="seccion-header">
+        <span class="seccion-icono">🔑</span>
+        <span class="seccion-titulo">Contraseña del dueño</span>
+      </div>
+      <div class="seccion-body">
+        <div class="campo">
+          <label>Nueva contraseña</label>
+          <input type="password" id="cfg-pass-nueva" placeholder="Mínimo 4 caracteres">
+        </div>
+        <div class="campo">
+          <label>Confirmar contraseña</label>
+          <input type="password" id="cfg-pass-confirm" placeholder="Repetí la contraseña">
+        </div>
+        <p style="font-size:12px;color:var(--muted);">Si no querés cambiarla, dejá estos campos vacíos.</p>
+      </div>
+    </div>
+
+  </div><!-- /config-body -->
+
+  <!-- Barra guardar -->
+  <div class="guardar-bar visible" id="guardarBar">
+    <button class="btn-preview" onclick="previewConfig()">👁 Previsualizar</button>
+    <button class="btn-guardar" onclick="guardarConfig()">💾 Guardar cambios</button>
+  </div>
+
+</div><!-- /config-panel -->
+
+<!-- Toast -->
+<div class="cfg-toast" id="cfgToast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBEoaT_ldwRxBlRe6dpAc2WKBWcbjlmHp0",
+  authDomain: "app-cafeteria-c4518.firebaseapp.com",
+  databaseURL: "https://app-cafeteria-c4518-default-rtdb.firebaseio.com",
+  projectId: "app-cafeteria-c4518",
+  storageBucket: "app-cafeteria-c4518.firebasestorage.app",
+  messagingSenderId: "1046878638257",
+  appId: "1:1046878638257:web:2a93aa93b8e43570c75290"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+let configActual = {};
+let fontSeleccionada = "Playfair Display";
+let logoBase64 = null;
+let fondoBase64 = null;
+let logoUrlExternal = null;
+let fondoUrlExternal = null;
+
+// ── Cargar config actual ──
+async function cargarConfig() {
+  const snap = await get(ref(db, "config"));
+  if (snap.exists()) {
+    configActual = snap.val();
+    poblarFormulario(configActual);
+  }
+}
+cargarConfig();
+
+function poblarFormulario(c) {
+  if (c.nombreApp)      document.getElementById("cfg-nombre").value    = c.nombreApp;
+  if (c.subtitulo)      document.getElementById("cfg-subtitulo").value  = c.subtitulo;
+  if (c.logoUrl)        { document.getElementById("cfg-logoUrl").value  = c.logoUrl; mostrarPreviewUrl("logoPreview", c.logoUrl); }
+  if (c.fondoUrl)       { document.getElementById("cfg-fondoUrl").value = c.fondoUrl; mostrarPreviewUrl("fondoPreview", c.fondoUrl); }
+  if (c.colorPrimario)  setColor("primario", c.colorPrimario);
+  if (c.colorSidebar)   setColor("sidebar",  c.colorSidebar);
+  if (c.colorFondo)     setColor("fondo",    c.colorFondo);
+  if (c.tipografia) {
+    fontSeleccionada = c.tipografia;
+    document.querySelectorAll(".font-btn").forEach(b => {
+      b.classList.toggle("seleccionada", b.textContent.trim() === c.tipografia);
+    });
+  }
+}
+
+// ── Verificar contraseña ──
+window.verificarPass = async function() {
+  const input = document.getElementById("passInput").value.trim();
+  if (!input) { 
+    document.getElementById("lockError").style.display = "block";
+    setTimeout(() => { document.getElementById("lockError").style.display = "none"; }, 2000);
+    return; 
+  }
+  let passGuardada = "1234";
+  try {
+    const snap = await get(ref(db, "config/password"));
+    if (snap.exists()) passGuardada = snap.val();
+  } catch(e) {
+    // Si no hay conexion, usar la de cache local
+    try {
+      const cached = localStorage.getItem("cafeteria_config");
+      if (cached) {
+        const cfg = JSON.parse(cached);
+        if (cfg.password) passGuardada = cfg.password;
+      }
+    } catch(e2) {}
+  }
+  if (input === passGuardada) {
+    document.getElementById("lockScreen").style.display  = "none";
+    document.getElementById("configPanel").style.display = "block";
+    cargarConfig();
+  } else {
+    document.getElementById("lockError").style.display = "block";
+    document.getElementById("passInput").value = "";
+    setTimeout(() => { document.getElementById("lockError").style.display = "none"; }, 2000);
+  }
+};
+
+document.getElementById("passInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") window.verificarPass();
+});
+
+// ── Guardar config ──
+window.guardarConfig = async function() {
+  const nueva = {};
+
+  const nombre   = document.getElementById("cfg-nombre").value.trim();
+  const subtitulo= document.getElementById("cfg-subtitulo").value.trim();
+  if (nombre)    nueva.nombreApp  = nombre;
+  if (subtitulo) nueva.subtitulo  = subtitulo;
+
+  // Logo
+  const logoUrl = logoBase64 || logoUrlExternal || document.getElementById("cfg-logoUrl").value.trim();
+  if (logoUrl)   nueva.logoUrl   = logoUrl;
+
+  // Fondo
+  const fondoUrl = fondoBase64 || fondoUrlExternal || document.getElementById("cfg-fondoUrl").value.trim();
+  if (fondoUrl)  nueva.fondoUrl  = fondoUrl;
+  if (configActual._quitarFondo) nueva.fondoUrl = null;
+
+  // Colores
+  nueva.colorPrimario = document.getElementById("hex-primario").value;
+  nueva.colorSidebar  = document.getElementById("hex-sidebar").value;
+  nueva.colorFondo    = document.getElementById("hex-fondo").value;
+
+  // Tipografía
+  nueva.tipografia = fontSeleccionada;
+
+  // Contraseña
+  const passNueva   = document.getElementById("cfg-pass-nueva").value;
+  const passConfirm = document.getElementById("cfg-pass-confirm").value;
+  if (passNueva) {
+    if (passNueva.length < 4) { showToast("La contraseña debe tener al menos 4 caracteres"); return; }
+    if (passNueva !== passConfirm) { showToast("Las contraseñas no coinciden"); return; }
+    nueva.password = passNueva;
+  } else {
+    // Mantener la anterior
+    const snap = await get(ref(db, "config/password"));
+    nueva.password = snap.exists() ? snap.val() : "1234";
+  }
+
+  try {
+    await set(ref(db, "config"), nueva);
+    // Actualizar cache local
+    try { localStorage.setItem("cafeteria_config", JSON.stringify(nueva)); } catch(e) {}
+    showToast("✓ Configuración guardada");
+    configActual = nueva;
+    setTimeout(() => { window.location.href = "index.html"; }, 1500);
+  } catch(e) {
+    showToast("Error al guardar. Revisá tu conexión.");
+  }
+};
+
+// ── Previsualizar ──
+window.previewConfig = function() {
+  const primario = document.getElementById("hex-primario").value;
+  const sidebar  = document.getElementById("hex-sidebar").value;
+  const fondo    = document.getElementById("hex-fondo").value;
+  document.documentElement.style.setProperty("--terracota", primario);
+  document.documentElement.style.setProperty("--espresso",  sidebar);
+  document.documentElement.style.setProperty("--bg",        fondo);
+  showToast("Previsualización aplicada");
+};
+
+// ── Colores ──
+window.syncColor = function(tipo, valor) {
+  document.getElementById("hex-"+tipo).value = valor;
+  actualizarChip(tipo, valor);
+};
+window.syncHex = function(tipo, valor) {
+  if (/^#[0-9A-Fa-f]{6}$/.test(valor)) {
+    document.getElementById("color-"+tipo).value = valor;
+    actualizarChip(tipo, valor);
+  }
+};
+function setColor(tipo, valor) {
+  document.getElementById("color-"+tipo).value = valor;
+  document.getElementById("hex-"+tipo).value   = valor;
+  actualizarChip(tipo, valor);
+}
+function actualizarChip(tipo, valor) {
+  const chip = document.getElementById("chip-"+tipo);
+  if (!chip) return;
+  chip.style.background = valor;
+  chip.style.color = tipo === "fondo" ? "#2C1A0E" : "white";
+  const prev = document.getElementById("prev-"+tipo);
+  if (prev) prev.style.background = valor;
+}
+
+// ── Tipografía ──
+window.seleccionarFont = function(nombre, btn) {
+  fontSeleccionada = nombre;
+  document.querySelectorAll(".font-btn").forEach(b => b.classList.remove("seleccionada"));
+  btn.classList.add("seleccionada");
+};
+
+// ── Imágenes ──
+window.previewImagen = function(input, previewId, tipo) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = e.target.result;
+    mostrarPreviewUrl(previewId, data);
+    if (tipo === "logoUrl")  { logoBase64  = data; logoUrlExternal  = null; }
+    if (tipo === "fondoUrl") { fondoBase64 = data; fondoUrlExternal = null; }
+  };
+  reader.readAsDataURL(file);
+};
+
+function mostrarPreviewUrl(previewId, url) {
+  const img = document.getElementById(previewId);
+  if (!img) return;
+  img.src = url;
+  img.style.display = "block";
+}
+
+window.syncLogoUrl = function(url) {
+  logoUrlExternal = url; logoBase64 = null;
+  if (url) mostrarPreviewUrl("logoPreview", url);
+};
+window.syncFondoUrl = function(url) {
+  fondoUrlExternal = url; fondoBase64 = null;
+  if (url) mostrarPreviewUrl("fondoPreview", url);
+};
+window.quitarFondo = function() {
+  document.getElementById("cfg-fondoUrl").value = "";
+  document.getElementById("fondoPreview").style.display = "none";
+  fondoBase64 = null; fondoUrlExternal = null;
+  configActual._quitarFondo = true;
+  showToast("Fondo eliminado al guardar");
+};
+
+// ── Toast ──
+function showToast(msg) {
+  const t = document.getElementById("cfgToast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2800);
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pedido</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/png" href="imagenes/logo.png">
+<style>
+  .ped-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 16px;
+    background:rgba(28,20,12,0.92);
+    border-bottom:1px solid var(--border);
+    backdrop-filter:blur(12px);
+    position:sticky; top:0; z-index:50;
+  }
+  .ped-header-back {
+    display:flex; align-items:center; gap:6px;
+    font-size:14px; color:var(--muted);
+    text-decoration:none; padding:8px 12px;
+    border-radius:10px; border:1px solid var(--border);
+    transition:all 0.2s;
+  }
+  .ped-header-back:hover { color:var(--cream); border-color:var(--gold-mid); }
+  .ped-header-title { font-family:'Cormorant Garamond',serif; font-size:20px; color:var(--cream); text-align:right; }
+  .ped-header-sub   { font-size:12px; color:var(--muted); text-align:right; }
+
+  .search-wrap {
+    padding:10px 14px 0;
+    background:rgba(20,14,8,0.5);
+  }
+  .search-input {
+    width:100%; padding:10px 14px 10px 36px;
+    border-radius:50px; border:1px solid var(--border);
+    background:rgba(15,11,8,0.7);
+    color:var(--cream); font-size:14px;
+    outline:none; transition:border-color 0.2s;
+    font-family:'Outfit',sans-serif;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238A7560' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:12px center;
+  }
+  .search-input:focus { border-color:var(--gold); }
+  .search-input::placeholder { color:var(--muted); opacity:0.6; }
+
+  .search-results {
+    display:none;
+    position:fixed;
+    top:0;left:0;right:0;bottom:0;
+    background:rgba(10,7,4,0.85);
+    backdrop-filter:blur(8px);
+    z-index:300;
+    padding:70px 14px 20px;
+    overflow-y:auto;
+  }
+  .search-results.open { display:block; }
+  .search-results-header {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .search-results-titulo { font-family:'Cormorant Garamond',serif; font-size:20px; color:var(--cream); }
+  .search-close {
+    width:34px;height:34px;border-radius:50%;
+    background:rgba(200,169,110,0.1); border:1px solid var(--border);
+    color:var(--muted); font-size:16px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer; margin:0; padding:0;
+  }
+  .search-empty { color:var(--muted); font-size:14px; text-align:center; margin-top:30px; }
+
+  .cats-wrap {
+    overflow-x:auto; white-space:nowrap;
+    padding:10px 14px;
+    border-bottom:1px solid var(--border);
+    scrollbar-width:none;
+    background:rgba(20,14,8,0.6); backdrop-filter:blur(8px);
+  }
+  .cats-wrap::-webkit-scrollbar { display:none; }
+  .cat-btn {
+    display:inline-block; padding:8px 15px; margin-right:6px;
+    border-radius:50px; border:1px solid var(--border);
+    background:rgba(15,11,8,0.6); color:var(--warm);
+    font-size:13px; font-family:'Outfit',sans-serif; font-weight:500;
+    cursor:pointer; transition:all 0.18s; white-space:nowrap;
+  }
+  .cat-btn:hover, .cat-btn.activa {
+    background:var(--gold-dim); border-color:var(--gold); color:var(--cream);
+  }
+
+  .pedido-wrap { padding:10px 14px 170px; }
+  .seccion-titulo {
+    font-family:'Cormorant Garamond',serif; font-size:17px;
+    color:var(--gold); margin:14px 0 8px;
+    padding-bottom:6px; border-bottom:1px solid var(--border);
+  }
+
+  .nota-bar {
+    display:flex; align-items:center; gap:10px;
+    padding:10px 14px;
+    background:rgba(200,169,110,0.06);
+    border-bottom:1px solid var(--border);
+  }
+  .nota-bar-texto { flex:1; font-size:13px; color:var(--muted); font-style:italic; }
+  .nota-bar-btn {
+    padding:6px 12px!important; margin:0!important;
+    font-size:12px!important; border-radius:8px!important;
+    background:rgba(200,169,110,0.1)!important;
+    border-color:var(--border)!important; color:var(--gold)!important;
+  }
+
+  ul#lista { padding:0; margin:0; }
+  ul#lista li {
+    display:flex; align-items:center; flex-wrap:wrap; gap:6px;
+    padding:10px 12px; font-size:13px; border-radius:10px;
+    margin-bottom:6px; background:rgba(35,26,18,0.7);
+    border:1px solid var(--border); text-align:left;
+    animation:fadeUp 0.25s ease both;
+  }
+  ul#lista li .nombre-item { flex:1; font-size:14px; }
+  ul#lista li button { padding:5px 10px; margin:0; font-size:13px; border-radius:7px; }
+
+  .barra-bottom {
+    position:fixed; bottom:0;left:0;right:0;
+    background:rgba(20,14,8,0.97);
+    border-top:1px solid var(--border);
+    backdrop-filter:blur(16px);
+    padding:12px 14px; z-index:100;
+    display:flex; align-items:center; gap:10px;
+  }
+  .total-label {
+    flex:1; font-family:'Cormorant Garamond',serif;
+    font-size:24px; font-weight:700; color:var(--gold);
+  }
+  .btn-enviar-ped {
+    flex:1; padding:13px 10px!important; font-size:15px!important;
+    background:rgba(61,107,58,0.25)!important; border-color:rgba(61,107,58,0.5)!important;
+    color:#7DC47A!important; border-radius:12px!important;
+    margin:0!important; font-weight:600!important;
+  }
+
+  .modal-overlay {
+    display:none; position:fixed; inset:0;
+    background:rgba(10,7,4,0.72); backdrop-filter:blur(5px);
+    z-index:200; align-items:flex-end; justify-content:center;
+  }
+  .modal-overlay.abierto { display:flex; }
+  .modal-panel {
+    width:100%; max-width:500px;
+    background:var(--charcoal);
+    border:1px solid var(--border);
+    border-radius:22px 22px 0 0;
+    padding:0 0 20px;
+    animation:slideUp 0.28s ease;
+    max-height:75vh; display:flex; flex-direction:column;
+  }
+  .modal-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 18px 14px; border-bottom:1px solid var(--border); flex-shrink:0;
+  }
+  .modal-titulo { font-family:'Cormorant Garamond',serif; font-size:20px; color:var(--cream); font-weight:700; }
+  .modal-cerrar {
+    width:34px;height:34px; border-radius:50%;
+    background:rgba(200,169,110,0.1); border:1px solid var(--border);
+    color:var(--muted); font-size:16px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer; margin:0;padding:0; transition:all 0.18s;
+  }
+  .modal-cerrar:hover { color:var(--cream); border-color:var(--gold); }
+  .modal-productos {
+    overflow-y:auto; padding:12px 14px;
+    display:flex; flex-direction:column; gap:8px;
+    scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+  }
+  .prod-btn {
+    width:100%; text-align:left; padding:14px 16px;
+    border-radius:12px; background:rgba(35,26,18,0.7);
+    border:1px solid var(--border); color:var(--cream);
+    font-size:15px; font-family:'Outfit',sans-serif;
+    cursor:pointer; display:flex; align-items:center;
+    justify-content:space-between; gap:12px;
+    transition:all 0.18s; margin:0;
+  }
+  .prod-btn:hover, .prod-btn:active {
+    background:var(--gold-dim); border-color:var(--gold-mid); transform:none;
+  }
+  .prod-nombre { flex:1; font-size:15px; }
+  .prod-precio { font-family:'Cormorant Garamond',serif; font-size:17px; color:var(--gold); white-space:nowrap; }
+  .prod-add    { font-size:20px; color:var(--gold); opacity:0.7; }
+
+  @keyframes slideUp { from{transform:translateY(100%);opacity:0;} to{transform:translateY(0);opacity:1;} }
+</style>
+</head>
+<body class="con-fondo-secundario" style="padding:0;">
+
+<div class="ped-header">
+  <a href="mesas.html" class="ped-header-back">← Mesas</a>
+  <div>
+    <div class="ped-header-title" id="mesa">Mesa —</div>
+    <div class="ped-header-sub"   id="nombreMozoHeader">—</div>
+  </div>
+</div>
+
+<div class="search-wrap">
+  <input class="search-input" id="buscadorRapido" placeholder="Buscar producto..." oninput="buscarRapido(this.value)" onfocus="abrirBuscador()">
+</div>
+
+<div class="search-results" id="searchResults">
+  <div class="search-results-header">
+    <div class="search-results-titulo">Resultados</div>
+    <button class="search-close" onclick="cerrarBuscador()">✕</button>
+  </div>
+  <div id="searchLista"></div>
+</div>
+
+<div class="nota-bar" id="nota-wrap" style="display:none;">
+  <span style="font-size:16px;">📋</span>
+  <span class="nota-bar-texto" id="nota-mesa-texto"></span>
+  <button class="nota-bar-btn" onclick="editarNotaMesa()">Editar</button>
+</div>
+
+<!-- Categorías de cafetería -->
+<div class="cats-wrap">
+  <button class="cat-btn" onclick="abrirModal('cafes')">☕ Cafés</button>
+  <button class="cat-btn" onclick="abrirModal('tes')">🍵 Tés</button>
+  <button class="cat-btn" onclick="abrirModal('bebidasFrias')">🧊 Frías</button>
+  <button class="cat-btn" onclick="abrirModal('jugos')">🍊 Jugos</button>
+  <button class="cat-btn" onclick="abrirModal('sandwiches')">🥪 Sandwiches</button>
+  <button class="cat-btn" onclick="abrirModal('tostadas')">🍞 Tostadas</button>
+  <button class="cat-btn" onclick="abrirModal('medialunas')">🥐 Medialunas</button>
+  <button class="cat-btn" onclick="abrirModal('postres')">🍰 Postres</button>
+  <button class="cat-btn" onclick="abrirModal('bebidasSinAlcohol')">🥤 Bebidas</button>
+  <button class="cat-btn" onclick="abrirModal('cervezas')">🍺 Cervezas</button>
+  <button class="cat-btn" onclick="abrirModal('vinos')">🍷 Vinos</button>
+  <button class="cat-btn" onclick="abrirModal('tragos')">🍹 Tragos</button>
+</div>
+
+<div class="pedido-wrap">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+    <div class="seccion-titulo" style="margin:0;border:none;">Pedido actual</div>
+    <button onclick="editarNotaMesa()" style="font-size:12px;padding:6px 12px;border-radius:8px;background:rgba(200,169,110,0.1);border-color:var(--border);color:var(--gold);margin:0;">
+      📋 Nota mesa
+    </button>
+  </div>
+  <ul id="lista"></ul>
+</div>
+
+<div class="barra-bottom">
+  <div class="total-label" id="total">$0</div>
+  <button class="btn-enviar-ped" onclick="enviarPedido()">📤 Enviar pedido</button>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="cerrarModalFuera(event)">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <div class="modal-titulo" id="modalTitulo">Categoría</div>
+      <button class="modal-cerrar" onclick="cerrarModal()">✕</button>
+    </div>
+    <div class="modal-productos" id="modalProductos"></div>
+  </div>
+</div>
+
+<script src="toast.js"></script>
+<script src="modal.js"></script>
+<script type="module" src="app.js"></script>
+
+<script>
+  const labels = {
+    cafes:"Cafés", tes:"Tés e Infusiones",
+    bebidasFrias:"Bebidas Frías", jugos:"Jugos",
+    sandwiches:"Sandwiches", tostadas:"Tostadas",
+    medialunas:"Medialunas y Facturas", postres:"Postres y Tortas",
+    bebidasSinAlcohol:"Bebidas sin Alcohol", cervezas:"Cervezas",
+    vinos:"Vinos", tragos:"Tragos"
+  };
+
+  window.addEventListener("load", function(){
+    const mesa     = sessionStorage.getItem("mesa");
+    const empleado = sessionStorage.getItem("mozo") || sessionStorage.getItem("mozoSeleccionado");
+    if(mesa)     document.getElementById("mesa").textContent = "Mesa " + mesa;
+    if(empleado) document.getElementById("nombreMozoHeader").textContent = empleado;
+  });
+
+  function buildProdBtn(p) {
+    const btn = document.createElement("button");
+    btn.className = "prod-btn";
+    btn.innerHTML =
+      '<span class="prod-nombre">' + p.nombre + '</span>' +
+      '<span class="prod-precio">$' + p.precio.toLocaleString('es-AR') + '</span>' +
+      '<span class="prod-add">＋</span>';
+    btn.onclick = function() {
+      window.agregar(p.nombre, p.precio);
+      cerrarModal();
+      cerrarBuscador();
+    };
+    return btn;
+  }
+
+  window.abrirModal = function(categoria) {
+    document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("activa"));
+    event.target.classList.add("activa");
+    document.getElementById("modalTitulo").textContent = labels[categoria] || categoria;
+    const cont = document.getElementById("modalProductos");
+    cont.innerHTML = "";
+
+    function poblarModal() {
+      const menuData = window._menuData;
+      if (!menuData || !menuData[categoria]) {
+        cont.innerHTML = "<p style='color:var(--muted);padding:20px;'>Cargando...</p>";
+        setTimeout(poblarModal, 150);
+        return;
+      }
+      cont.innerHTML = "";
+      if(menuData[categoria].length === 0){
+        cont.innerHTML = "<p style='color:var(--muted);padding:20px;font-size:14px;'>Sin productos en esta categoría.<br>Agregá desde Administración.</p>";
+        return;
+      }
+      menuData[categoria].forEach(p => cont.appendChild(buildProdBtn(p)));
+    }
+    poblarModal();
+    document.getElementById("modalOverlay").classList.add("abierto");
+    document.body.style.overflow = "hidden";
+  };
+
+  window.cerrarModal = function() {
+    document.getElementById("modalOverlay").classList.remove("abierto");
+    document.body.style.overflow = "";
+    document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("activa"));
+  };
+  window.cerrarModalFuera = function(e) {
+    if(e.target === document.getElementById("modalOverlay")) cerrarModal();
+  };
+
+  window.abrirBuscador = function() {};
+
+  window.buscarRapido = function(q) {
+    const searchResults = document.getElementById("searchResults");
+    const searchLista   = document.getElementById("searchLista");
+    if (!q || q.length < 2) {
+      searchResults.classList.remove("open");
+      return;
+    }
+    searchResults.classList.add("open");
+    document.body.style.overflow = "hidden";
+
+    function buscar() {
+      const menuData = window._menuData;
+      if (!menuData) { setTimeout(buscar, 150); return; }
+      const texto = q.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+      const resultados = [];
+      Object.values(menuData).forEach(cat => {
+        cat.forEach(p => {
+          const nombre = p.nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+          if(nombre.includes(texto)) resultados.push(p);
+        });
+      });
+      searchLista.innerHTML = "";
+      if(resultados.length === 0){
+        searchLista.innerHTML = '<p class="search-empty">Sin resultados para "' + q + '"</p>';
+        return;
+      }
+      resultados.forEach(p => searchLista.appendChild(buildProdBtn(p)));
+    }
+    buscar();
+  };
+
+  window.cerrarBuscador = function() {
+    document.getElementById("searchResults").classList.remove("open");
+    document.getElementById("buscadorRapido").value = "";
+    document.body.style.overflow = "";
+  };
+</script>
+
+<script src="config-loader.js"></script>
+</body>
+</html>

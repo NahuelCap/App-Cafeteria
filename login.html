@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login — Mi Cafetería</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/png" href="imagenes/logo.png">
+<style>
+  .login-wrap {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 20px;
+  }
+  .login-card {
+    background: rgba(35,26,18,0.85);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 36px 28px 32px;
+    width: 100%;
+    max-width: 380px;
+    backdrop-filter: blur(14px);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    animation: fadeUp 0.5s ease both;
+  }
+  .login-logo {
+    width: 70px; height: 70px;
+    border-radius: 50%;
+    border: 2px solid var(--gold);
+    object-fit: cover;
+    margin: 0 auto 18px;
+    display: block;
+    box-shadow: 0 0 24px rgba(200,169,110,0.2);
+  }
+  .login-titulo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--cream);
+    margin-bottom: 4px;
+    text-align: center;
+  }
+  .login-sub {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 28px;
+    letter-spacing: 0.04em;
+  }
+  .login-label {
+    display: block;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    text-align: left;
+  }
+  .login-input {
+    width: 100%;
+    font-size: 16px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(15,11,8,0.6);
+    color: var(--cream);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    margin-bottom: 20px;
+    display: block;
+  }
+  .login-input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(200,169,110,0.12);
+  }
+  .login-btn {
+    width: 100%;
+    padding: 15px;
+    border-radius: 12px;
+    border: none;
+    background: var(--gold);
+    color: var(--ink);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    margin: 0;
+  }
+  .login-btn:hover { background: #dfc07e; transform: translateY(-1px); }
+  .login-btn:active { transform: scale(0.98); }
+  .login-volver {
+    display: block;
+    text-align: center;
+    margin-top: 18px;
+    font-size: 13px;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .login-volver:hover { color: var(--cream); }
+</style>
+</head>
+<body class="con-fondo-secundario">
+
+<div class="login-wrap">
+  <div class="login-card">
+    <img src="imagenes/logo.png" alt="Logo" class="login-logo">
+    <div class="login-titulo">Mi Cafetería</div>
+    <div class="login-sub">Ingreso de empleado</div>
+
+    <label class="login-label" for="nombre">Tu nombre</label>
+    <input
+      id="nombre"
+      class="login-input"
+      placeholder="Ej: Carlos, María..."
+      autocomplete="off"
+      autocapitalize="words"
+      enterkeyhint="go"
+    >
+
+    <button class="login-btn" onclick="entrar()">Entrar →</button>
+    <a href="index.html" class="login-volver">← Volver al inicio</a>
+  </div>
+</div>
+
+<script>
+document.getElementById("nombre").addEventListener("keydown", function(e){
+  if(e.key === "Enter") entrar();
+});
+
+function entrar(){
+  let nombre = document.getElementById("nombre").value.trim();
+  if(nombre === ""){
+    alert("Ingresá tu nombre para continuar");
+    return;
+  }
+  sessionStorage.setItem("mozo", nombre);
+  window.location.href = "mesas.html";
+}
+</script>
+
+<script src="config-loader.js"></script>
+</body>
+</html>

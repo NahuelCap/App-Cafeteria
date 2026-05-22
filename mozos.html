@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seleccionar Empleado — Mi Cafetería</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/png" href="imagenes/logo.png">
+</head>
+
+<body class="con-fondo-secundario">
+
+<a href="index.html" style="display:inline-block;margin:10px 0 0;padding:8px 16px;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:13px;text-decoration:none;">← Inicio</a>
+<h1 class="titulo-cuadro">🍽️ Seleccionar Empleado</h1>
+
+<div id="listaEmpleados"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBEoaT_ldwRxBlRe6dpAc2WKBWcbjlmHp0",
+  authDomain: "app-cafeteria-c4518.firebaseapp.com",
+  databaseURL: "https://app-cafeteria-c4518-default-rtdb.firebaseio.com",
+  projectId: "app-cafeteria-c4518",
+  storageBucket: "app-cafeteria-c4518.firebasestorage.app",
+  messagingSenderId: "1046878638257",
+  appId: "1:1046878638257:web:2a93aa93b8e43570c75290"
+};
+
+let app;
+    try { app = initializeApp(firebaseConfig); }
+    catch(e) { app = initializeApp(firebaseConfig, "mozos_html_" + Date.now()); }
+const db  = getDatabase(app);
+const lista = document.getElementById("listaEmpleados");
+
+onValue(ref(db, "mesas"), (snapshot) => {
+  lista.innerHTML = "";
+  if (!snapshot.exists()) {
+    lista.innerHTML = "<p style='color:var(--muted);font-size:14px;margin-top:20px;'>No hay empleados activos</p>";
+    return;
+  }
+  snapshot.forEach(child => {
+    const empleado = child.key;
+    const btn      = document.createElement("button");
+    btn.innerHTML  = "👤 " + empleado;
+    btn.onclick    = () => {
+      sessionStorage.setItem("mozoSeleccionado", empleado);
+      window.location.href = "mesas.html";
+    };
+    lista.appendChild(btn);
+  });
+});
+</script>
+
+<script src="config-loader.js"></script>
+</body>
+</html>
