@@ -79,7 +79,8 @@
 
     // ── Logo ──
     if (c.logoUrl) {
-      document.querySelectorAll('img[alt="Logo"], img[alt="Logo central"]').forEach(img => {
+      // Aplica a todas las imagenes de logo incluyendo splash
+      document.querySelectorAll('img[alt="Logo"], img[alt="Logo central"], .logo-ring img').forEach(img => {
         img.src = c.logoUrl;
       });
       const favicon = document.querySelector('link[rel="icon"]');
