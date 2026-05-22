@@ -2,19 +2,19 @@
   "name": "Mi Cafetería",
   "short_name": "Cafetería",
   "description": "App de gestión para cafetería",
-  "start_url": "/splash.html",
-  "scope": "/",
+  "start_url": "/App-Cafeteria/splash.html",
+  "scope": "/App-Cafeteria/",
   "display": "standalone",
-  "background_color": "#0F0B08",
-  "theme_color": "#0F0B08",
+  "background_color": "#F5EFE6",
+  "theme_color": "#2C1A0E",
   "icons": [
     {
-      "src": "imagenes/logo.png",
+      "src": "/App-Cafeteria/imagenes/logo.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "imagenes/logo.png",
+      "src": "/App-Cafeteria/imagenes/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
